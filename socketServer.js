@@ -8,7 +8,7 @@ let sockets = []
 const server = net.createServer(socket => {
   console.log(`Connected: adress ${socket.remoteAddress}, port ${socket.remotePort}`);
   socket.write('Welcome to the chat!\nPlease enter a username.');
-  socket.data = { username: null, admin: false, receiver: null, timeoutId: null, timeoutIdMsg: null, messages: 0};
+  socket.data = { username: null, admin: false, receiver: null, timeoutId: null, timeoutIdMsg: null, messages: 0 };
   sockets.push(socket);
 
   socket.on('data', data => {
@@ -18,11 +18,13 @@ const server = net.createServer(socket => {
 
     if (text.toLowerCase() === 'quit') {
       socket.destroy();
+      return;
     }
 
     if (badLanguage(text)) {
       socket.write('You were kicked out for swearing.');
       socket.destroy();
+      return;
     }
 
     clearTimeout(socket.data.timeoutId);
@@ -32,6 +34,7 @@ const server = net.createServer(socket => {
     if (socket.data.messages === 10) {
       socket.write('You were kicked out for spamming.');
       socket.destroy();
+      return;
     }
 
     // messages are set to 0 after one minute
@@ -82,10 +85,10 @@ const server = net.createServer(socket => {
           // remove user, admin rights required
           case '/remove':
             if (socket.data.admin) {
-            const username = text.split(' ')[1];
-            const removed = sockets.find(s => s.data.username === username);
-            removed.write('You were kicked out.');
-            removed.destroy();
+              const username = text.split(' ')[1];
+              const removed = sockets.find(s => s.data.username === username);
+              removed.write('You were kicked out.');
+              removed.destroy();
             } else {
               socket.write('You do not have admin rights.');
             }
@@ -106,16 +109,16 @@ const server = net.createServer(socket => {
         }
       }
     };
+  });
 
-    socket.on('error', err => {
-      console.log('Error:' + err);
-    });
+  socket.on('error', err => {
+    console.log('Error:' + err);
+  });
 
-    socket.on('close', () => {
-      console.log(`Connection closed: ${socket.remoteAddress}, ${socket.remotePort}`);
-      broadcast(`User '${socket.data.username}' left the chat.`, socket);
-      sockets.splice(sockets.indexOf(socket), 1);
-    });
+  socket.on('close', () => {
+    console.log(`Connection closed: ${socket.remoteAddress}, ${socket.remotePort}`);
+    broadcast(`User '${socket.data.username}' left the chat.`, socket);
+    sockets.splice(sockets.indexOf(socket), 1);
   });
 });
 
